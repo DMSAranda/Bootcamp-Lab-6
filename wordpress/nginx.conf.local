@@ -1,0 +1,37 @@
+events {}
+    http {
+      upstream php-upstream {
+          server 127.0.0.1:9000;
+      }
+
+      server {
+
+          include /etc/nginx/mime.types;
+
+          listen 8081;
+          root /var/www/html;
+          index index.php index.html index.htm;
+
+          location / {
+              try_files $uri $uri/ @rewriteapp;
+              add_header 'Access-Control-Allow-Origin' '*';
+              add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS';
+              add_header 'Access-Control-Allow-Headers' 'DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range';
+              add_header 'Access-Control-Expose-Headers' 'Content-Length,Content-Range';
+          }
+
+          location @rewriteapp {
+              rewrite ^(.*)$ /index.php/$1 last;
+          }
+
+          location ~ \.php$ {
+              include snippets/fastcgi-php.conf;
+              fastcgi_pass php-upstream;
+              fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+              include fastcgi_params;
+          }
+          
+          error_log /var/log/nginx/symfony_error.log;
+          access_log /var/log/nginx/symfony_access.log;
+      }
+    }
